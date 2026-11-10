@@ -1,3 +1,7 @@
+#SellWise
+A Small Business Inventory, Sales, and Product Costing System
+
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
