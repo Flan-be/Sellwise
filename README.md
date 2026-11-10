@@ -1,4 +1,4 @@
-#SellWise
+# SellWise
 A Small Business Inventory, Sales, and Product Costing System
 
 
