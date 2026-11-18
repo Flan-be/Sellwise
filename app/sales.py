@@ -5,6 +5,8 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+from pymongo import ReturnDocument
+from .settings import get_settings
 
 from .deps import db, client, current_user
 
@@ -84,6 +86,13 @@ def list_sales(date: str | None = None, tz: int = 0, user=Depends(current_user))
                    .sort("sale_date", -1)
     return [out(s) for s in rows]
 
+@router.get("/{sid}")
+def get_sale(sid: str, user=Depends(current_user)):
+    s = db.sales.find_one({"_id": oid(sid), "owner_uid": user["uid"]})
+    if not s:
+        raise HTTPException(404, "Sale not found")
+    return out(s)
+
 
 @router.post("", status_code=201)
 def create_sale(body: SaleIn, user=Depends(current_user)):
@@ -95,12 +104,11 @@ def create_sale(body: SaleIn, user=Depends(current_user)):
 
     sale_id = ObjectId()
     now = datetime.now(timezone.utc)
+    business_name = get_settings(uid)["business_name"]
 
     def txn(session):
         lines, total = [], 0
         for pid, qty in wanted.items():
-            # atomic: only succeeds if the product is yours, active and has enough stock.
-            # Returns the document as it was BEFORE the update (price/cost snapshot).
             p = db.products.find_one_and_update(
                 {"_id": pid, "owner_uid": uid, "is_active": True,
                  "stock_quantity": {"$gte": qty}},
@@ -125,15 +133,23 @@ def create_sale(body: SaleIn, user=Depends(current_user)):
                 "quantity": -qty, "reference_sale_id": sale_id, "created_at": now,
             }, session=session)
 
+        # next receipt number for this owner (rolled back together if the sale fails)
+        seq = db.counters.find_one_and_update(
+            {"_id": f"receipt:{uid}"}, {"$inc": {"seq": 1}},
+            upsert=True, return_document=ReturnDocument.AFTER, session=session,
+        )["seq"]
+
         db.sales.insert_one({
             "_id": sale_id, "owner_uid": uid, "customer_id": None, "sale_date": now,
             "payment_method": body.payment_method, "status": "completed",
             "items": lines, "total_centavos": total,
+            "receipt_no": f"R-{seq:06d}", "business_name": business_name,
         }, session=session)
 
     with client.start_session() as s:
         s.with_transaction(txn)
     return out(db.sales.find_one({"_id": sale_id}))
+
 
 
 @router.post("/{sid}/void")

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Layout from "../Layout";
 import { api } from "../api";
 import { peso } from "../money";
+import { Link } from "react-router-dom";
 
 const TZ = -new Date().getTimezoneOffset();            // minutes east of UTC
 const todayStr = () => new Date().toLocaleDateString("en-CA");
@@ -27,6 +28,8 @@ export default function Sales() {
   const [day, setDay] = useState(todayStr());
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [lastSale, setLastSale] = useState(null);
 
   const loadProducts = useCallback(async () => {
     try { setProducts(await api("/products")); } catch (e) { setError(errorText(e)); }
@@ -71,13 +74,14 @@ export default function Sales() {
     setError("");
     setBusy(true);
     try {
-      await api("/sales", {
+      const sale = await api("/sales", {
         method: "POST",
         body: JSON.stringify({
           payment_method: payment,
           items: lines.map((l) => ({ product_id: l.p.id, quantity: l.qty })),
         }),
       });
+      setLastSale(sale);
       setCart({});
       await loadProducts();
       if (day !== todayStr()) setDay(todayStr()); else await loadSales();
@@ -104,7 +108,11 @@ export default function Sales() {
   return (
     <Layout>
       <div className="page-head"><h1>Sales</h1></div>
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error">{error}</p>}: {lastSale && (
+  <p className="info">
+    Sale recorded. <Link to={`/receipts/${lastSale.id}`}>View receipt →</Link>
+  </p>
+)}
 
       <section className="pos">
         <div className="card">
@@ -175,6 +183,7 @@ export default function Sales() {
                   <td>{s.payment_method}</td>
                   <td>{peso(s.total_centavos)}{s.status === "voided" && <span className="badge">Voided</span>}</td>
                   <td className="actions">
+                    <Link to={`/receipts/${s.id}`}>Receipt</Link>
                     {s.status === "completed" && (
                       <button className="link" onClick={() => voidSale(s)}>Void</button>
                     )}

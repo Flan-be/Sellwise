@@ -195,3 +195,25 @@ input.qty { width: 90px; padding: 0.4rem 0.7rem; text-align: center; }
 .nav { flex-wrap: wrap; }
 .qty-row { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
 .qty-row .link { font-size: 0.85rem; }
+
+.logo { display: block; width: 240px; max-width: 100%; margin: 0 auto 0.5rem; mix-blend-mode: multiply; }
+.logo.small { width: 120px; margin: 0; }
+
+/* receipt */
+.receipt { position: relative; max-width: 340px; margin: 0 auto; padding: 1.5rem 1.25rem; background: #fff; color: #222; border: 1px dashed var(--teal-500); font-family: "Courier New", monospace; font-size: 0.9rem; }
+.receipt h2 { text-align: center; color: #222; font-size: 1.3rem; }
+.receipt hr { border: none; border-top: 1px dashed #999; margin: 0.75rem 0; }
+.receipt .center { text-align: center; margin: 0.25rem 0; }
+.r-row { display: flex; justify-content: space-between; gap: 1rem; }
+.r-item { margin-bottom: 0.5rem; }
+.r-total { font-weight: 800; font-size: 1.1rem; }
+.receipt-void { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-20deg); font-size: 2.2rem; font-weight: 800; color: rgba(179, 64, 47, 0.45); border: 4px solid rgba(179, 64, 47, 0.45); padding: 0 1rem; pointer-events: none; }
+
+@media print {
+  body::before, .topbar, .no-print { display: none !important; }
+  body { background: #fff; }
+  .shell { padding: 0; max-width: none; }
+  .receipt { border: none; }
+}
+
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }

@@ -5,18 +5,23 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from .deps import db, current_user
 from .sales import local_today, local_range
+from .settings import get_settings
 
 router = APIRouter(prefix="/restock", tags=["restock"])
 
 ORDER = {"out": 0, "low": 1, "soon": 2}
 
 
-def restock_list(uid: str, window: int = 30, cover: int = 14):
+def restock_list(uid: str, window: int = 30, cover: int | None = None, soon: int | None = None):
     """Products that need reordering.
     out  = no stock left
     low  = at or below the reorder level
-    soon = will run out within 7 days at the recent selling speed
+    soon = will run out within `soon` days at the recent selling speed
     """
+    cfg = get_settings(uid)
+    cover = cover or cfg["cover_days"]
+    soon = soon or cfg["soon_days"]
+
     since = datetime.now(timezone.utc) - timedelta(days=window)
     sold = {r["_id"]: r["qty"] for r in db.sales.aggregate([
         {"$match": {"owner_uid": uid, "status": "completed", "sale_date": {"$gte": since}}},
@@ -35,7 +40,7 @@ def restock_list(uid: str, window: int = 30, cover: int = 14):
             status = "out"
         elif stock <= level:
             status = "low"
-        elif days_left is not None and days_left <= 7:
+        elif days_left is not None and days_left <= soon:
             status = "soon"
         else:
             continue
@@ -57,7 +62,7 @@ def restock_list(uid: str, window: int = 30, cover: int = 14):
 
 
 def restock_spent(uid: str, start: datetime, end: datetime) -> int:
-    """Plain helper (NOT a route): total paid for restocks in a time range."""
+    """Plain helper (NOT a route): total cost of restocks in a time range."""
     r = list(db.inventory_movements.aggregate([
         {"$match": {"owner_uid": uid, "type": "restock",
                     "created_at": {"$gte": start, "$lt": end}}},
@@ -67,11 +72,15 @@ def restock_spent(uid: str, start: datetime, end: datetime) -> int:
 
 
 @router.get("")
-def get_restock(window: int = Query(30, ge=7, le=90), cover: int = Query(14, ge=3, le=60),
+def get_restock(window: int = Query(30, ge=7, le=90),
+                cover: int | None = Query(None, ge=3, le=60),
                 user=Depends(current_user)):
-    items = restock_list(user["uid"], window, cover)
+    uid = user["uid"]
+    cfg = get_settings(uid)
+    cover = cover or cfg["cover_days"]
+    items = restock_list(uid, window, cover, cfg["soon_days"])
     return {
-        "window": window, "cover": cover, "items": items,
+        "window": window, "cover": cover, "soon_days": cfg["soon_days"], "items": items,
         "counts": {s: sum(1 for i in items if i["status"] == s) for s in ORDER},
     }
 

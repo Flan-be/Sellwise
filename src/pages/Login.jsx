@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import logo from "../assets/logo.jpg";
 
 export function friendlyError(err) {
   const map = {
@@ -62,7 +63,7 @@ export default function Login() {
   return (
   <main className="auth-wrap">
     <form onSubmit={submit} className="card">
-      <p className="eyebrow">SELLWISE</p>
+      <img src={logo} alt="SellWise" className="logo" />
       <h1>Log in</h1>
       <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
