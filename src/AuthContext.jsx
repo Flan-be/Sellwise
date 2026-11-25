@@ -23,16 +23,15 @@ const syncUser = (displayName) =>
 
 export function AuthProvider({ children }) {
   const [firebaseUser, setFirebaseUser] = useState(null);
-  const [profile, setProfile] = useState(null); // user doc from MongoDB
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Restores the session on page refresh
   useEffect(() => {
     return onAuthStateChanged(auth, async (u) => {
       setFirebaseUser(u);
       if (u) {
         try {
-          setProfile(await syncUser());
+          setProfile(await syncUser(u.displayName));
         } catch (e) {
           console.error("Profile sync failed", e);
         }

@@ -11,6 +11,8 @@ import Profit from "./pages/Profit";
 import Restock from "./pages/Restock";
 import Settings from "./pages/Settings";
 import ReceiptPage from "./pages/ReceiptPage";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const guard = (el) => <ProtectedRoute>{el}</ProtectedRoute>;
 
@@ -21,6 +23,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/" element={guard(<Dashboard />)} />
           <Route path="/products" element={guard(<Products />)} />
           <Route path="/restock" element={guard(<Restock />)} />

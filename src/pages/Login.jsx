@@ -49,17 +49,6 @@ export default function Login() {
     }
   };
 
-  const forgot = async () => {
-    if (!email) return setError("Enter your email first.");
-    try {
-      await resetPassword(email.trim());
-      setError("");
-      setInfo("If that email exists, a reset link has been sent.");
-    } catch (err) {
-      setError(friendlyError(err));
-    }
-  };
-
   return (
   <main className="auth-wrap">
     <form onSubmit={submit} className="card">
@@ -68,10 +57,9 @@ export default function Login() {
       <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       {error && <p className="error">{error}</p>}
-      {info && <p className="info">{info}</p>}
       <button disabled={busy}>{busy ? "Signing in…" : "Log in"}</button>
       <button type="button" className="outline" onClick={google}>Continue with Google</button>
-      <button type="button" className="link" onClick={forgot}>Forgot password?</button>
+      <Link to="/forgot-password" className="muted" style={{ textAlign: "center" }}>Forgot password?</Link> 
       <p className="muted">No account? <Link to="/register">Register</Link></p>
     </form>
   </main>
